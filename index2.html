@@ -3,57 +3,113 @@
 	<head>
 		<meta charset=utf-8>
 		<title>My first Three.js app</title>
+    <script src="js/three.js"></script>
+    <script src="js/OrbitControls.js"></script>
 		<style>
-			body { margin: 0; }
-			canvas { width: 100%; height: 100% }
+			body { margin: 0}
+			canvas { width: 960; height: 500; }
 		</style>
 	</head>
 	<body>
-		<script src="js/three.js"></script>
-    <script src="js/OrbitControls.js"></script>
 		<script>
     var scene = new THREE.Scene();
+    
     var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    camera.position.z = 300;
+    controls = new THREE.OrbitControls( camera );
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setClearColor( 0xf0f0f0 );
+    
     document.body.appendChild( renderer.domElement );
-      
-    var group = new THREE.Group();    
-    scene.add(group);
         
-    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    var material = new THREE.MeshNormalMaterial();
-    var cube = new THREE.Mesh( geometry, material );
-    group.add( cube );
-        
-    var geometry2 = new THREE.SphereGeometry( 0.5, 32, 32 );
-    var sphere = new THREE.Mesh( geometry2, material );
-    cube.add(sphere);
-        
-    controls = new THREE.OrbitControls( camera );
-    
-        
-    
+    function makeTextSprite( message, parameters ){
+      if ( parameters === undefined ) parameters = {};
 
-    camera.position.z = 10;
+      var fontface = parameters["fontface"] || "Helvetica";
+      var fontsize = parameters["fontsize"] || 30;
+      var canvas = document.createElement('canvas');
+      var context = canvas.getContext('2d');
+      context.font = fontsize + "px " + fontface;
+
+      // get size data (height depends only on font size)
+      var metrics = context.measureText( message );
+      var textWidth = metrics.width;
+
+
+      // text color
+      context.fillStyle = "rgba(0, 0, 0, 1.0)";
+      context.fillText( message, 0, fontsize);
+
+      // canvas contents will be used for a texture
+      var texture = new THREE.Texture(canvas)
+          texture.minFilter = THREE.LinearFilter;
+          texture.needsUpdate = true;
+
+      var spriteMaterial = new THREE.SpriteMaterial({ map: texture, useScreenCoordinates: false});
+      var sprite = new THREE.Sprite( spriteMaterial );
+      sprite.scale.set(100,50,1.0);
+      return sprite;
+    }
+          
+    function gridInit(){
+        var boundingGrid = new THREE.Object3D(),
+            depth = 100,
+            width = 100,
+            height = 100;
+        
+        var planeXY = new THREE.GridHelper( 100, 20, 0x000000, 0x000000 ),
+            planeYZ = new THREE.GridHelper( 100, 20, 0x000000, 0x000000 ),
+            planeXZ = new THREE.GridHelper( 100, 20, 0x000000, 0x000000 );
+        
+        boundingGrid.add(planeXY);
+        boundingGrid.add(planeYZ);
+        boundingGrid.add(planeXZ); 
+        
+        planeXY.position.y = -height;
+        planeYZ.position.z = -depth;
+        planeYZ.rotation.x = Math.PI/2;
+        planeXZ.position.x = -width;
+        planeXZ.rotation.z = Math.PI/2;
+        
+
+        
+        /*var labelsW = createText2D("hihi");
+        boundingGrid.add(labelsW);
+			labelsW.position.x = width*1.5;
+			labelsW.position.y = -height;
+			//labelsW.position.z = -depth/2;*/
+        
+        var text2 = document.createElement('div');
+text2.style.position = 'absolute';
+//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+text2.style.width = 100;
+text2.style.height = 100;
+text2.style.backgroundColor = "blue";
+text2.innerHTML = "hi there!";
+text2.style.top = 200 + 'px';
+text2.style.left = 200 + 'px';
+document.body.appendChild(text2);
+			
+        
+        scene.add(boundingGrid);
+        boundingGrid.rotation.x = 0.3;
+        boundingGrid.rotation.y = -0.4;
+    }
+        
+
+    
     
     function render() {
         requestAnimationFrame( render );
-        
-        //cube.rotation.x += 0.1;
-        //cube.rotation.y += 0.01;
-    //cube.rotation.z += 0.1;
-    
-        //var seconds = new Date().getTime() / 1000;
-        //cube.position.x = Math.cos(seconds)*3;
-        //cube.position.y = Math.sin(seconds)*3;
         
         controls.update();
         
         renderer.render( scene, camera );
     }
     render();
+    gridInit();
     
       
 		</script>
