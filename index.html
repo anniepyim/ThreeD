@@ -105,16 +105,6 @@
                 y: +d.y,
                 z: +d.z
             };
-            lowPass[i] = {
-                x: +d.lp_x,
-                y: +d.lp_y,
-                z: +d.lp_z
-            };
-            highPass[i] = {
-                x: +d.hp_x,
-                y: +d.hp_y,
-                z: +d.hp_z
-            }
         })
 
     var xExent = d3.extent(unfiltered, function (d) {return d.x; }),
@@ -146,50 +136,6 @@
                   .range([-50,50]);
 
 
-    var titleX = createText2D('-X');
-    titleX.position.x = xScale(vpts.xMin) - 12,
-    titleX.position.y = 5;
-    scatterPlot.add(titleX);
-
-    var valueX = createText2D(format(xExent[0]));
-    valueX.position.x = xScale(vpts.xMin) - 12,
-    valueX.position.y = -5;
-    scatterPlot.add(valueX);
-
-    var titleX = createText2D('X');
-    titleX.position.x = xScale(vpts.xMax) + 12;
-    titleX.position.y = 5;
-    scatterPlot.add(titleX);
-
-    var valueX = createText2D(format(xExent[1]));
-    valueX.position.x = xScale(vpts.xMax) + 12,
-    valueX.position.y = -5;
-    scatterPlot.add(valueX);
-
-    var titleY = createText2D('-Y');
-    titleY.position.y = yScale(vpts.yMin) - 5;
-    scatterPlot.add(titleY);
-
-    var valueY = createText2D(format(yExent[0]));
-    valueY.position.y = yScale(vpts.yMin) - 15,
-    scatterPlot.add(valueY);
-
-    var titleY = createText2D('Y');
-    titleY.position.y = yScale(vpts.yMax) + 15;
-    scatterPlot.add(titleY);
-
-    var valueY = createText2D(format(yExent[1]));
-    valueY.position.y = yScale(vpts.yMax) + 5,
-    scatterPlot.add(valueY);
-
-    var titleZ = createText2D('-Z ' + format(zExent[0]));
-    titleZ.position.z = zScale(vpts.zMin) + 2;
-    scatterPlot.add(titleZ);
-
-    var titleZ = createText2D('Z ' + format(zExent[1]));
-    titleZ.position.z = zScale(vpts.zMax) + 2;
-    scatterPlot.add(titleZ);
-
     var mat = new THREE.ParticleBasicMaterial({
         vertexColors: true,
         size: 10
@@ -203,10 +149,7 @@
         var z = zScale(unfiltered[i].z);
 
         pointGeo.vertices.push(new THREE.Vector3(x, y, z));
-        console.log(pointGeo.vertices);
-        //pointGeo.vertices[i].angle = Math.atan2(z, x);
-        //pointGeo.vertices[i].radius = Math.sqrt(x * x + z * z);
-        //pointGeo.vertices[i].speed = (z / 100) * (x / 100);
+
         pointGeo.colors.push(new THREE.Color().setRGB(
           hexToRgb(colour(i)).r / 255, hexToRgb(colour(i)).g / 255, hexToRgb(colour(i)).b / 255 
         ));
@@ -222,7 +165,7 @@
     var sx = 0,
         sy = 0;
         
-    window.onmousedown = function(ev) {
+    /*window.onmousedown = function(ev) {
         down = true;
         sx = ev.clientX;
         sy = ev.clientY;
@@ -240,11 +183,12 @@
             sy += dy;
         }
     }
-    var animating = false;
+    
     window.ondblclick = function() {
         animating = !animating;
-    };
+    };*/
 
+    var animating = false;
     function animate(t) {
         if (!paused) {
             last = t;
