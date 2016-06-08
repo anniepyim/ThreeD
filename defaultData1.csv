@@ -1,0 +1,16 @@
+group,sampleID,info,x,y,z
+group1,001,hihi,3,3,3
+group1,002,hyhi,3,4,5
+group1,003,hbhi,3,6,7
+group1,004,hihi,4,5,3
+group1,005,hihi,6,7,3
+group2,006,hihi,50,50,50
+group2,007,hyhi,53,54,55
+group2,008,hbhi,53,56,57
+group2,009,hihi,54,55,53
+group2,010,hihi,56,57,53
+group3,011,hihi,90,90,90
+group3,012,hyhi,93,94,95
+group3,013,hbhi,93,96,97
+group3,014,hihi,94,95,93
+group3,015,hihi,96,97,93

@@ -14,14 +14,18 @@
 	<body>
 		<script>  
     
-    var data = d3.csv("defaultData.csv", function (d){
-      
-    var scene, camera, renderer, controls, pcPlot;
+    var container;
+    var scene, camera, renderer, controls, pcPlot, boxes,raycaster;
+    var mouse = new THREE.Vector2(), INTERSECTED;
     var depth = 100,
         width = 100,
         height = 100;
       
     function init(){
+        
+        container = document.createElement( 'div' );
+				document.body.appendChild( container );
+        
         scene = new THREE.Scene();
     
         camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -32,11 +36,41 @@
         renderer.setSize( window.innerWidth, window.innerHeight );
         renderer.setClearColor( 0xf0f0f0 );
         
+        raycaster = new THREE.Raycaster();
+        
         pcPlot = new THREE.Object3D();
         scene.add(pcPlot);
         pcPlot.rotation.y = -0.4;
+        pcPlot.rotation.x = 0.2;
+        
+        var geometry = new THREE.BoxBufferGeometry( 20, 20, 20 );
+        
+        boxes = new THREE.Object3D();
+
+				for ( var i = 0; i < 2000; i ++ ) {
+
+					var object = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
+
+					object.position.x = Math.random() * 800 - 400;
+					object.position.y = Math.random() * 800 - 400;
+					object.position.z = Math.random() * 800 - 400;
+
+					object.rotation.x = Math.random() * 2 * Math.PI;
+					object.rotation.y = Math.random() * 2 * Math.PI;
+					object.rotation.z = Math.random() * 2 * Math.PI;
+
+					object.scale.x = Math.random() + 0.5;
+					object.scale.y = Math.random() + 0.5;
+					object.scale.z = Math.random() + 0.5;
+
+					boxes.add( object );
+
+				}
+        
+        pcPlot.add(boxes);
 
         document.body.appendChild( renderer.domElement );
+        document.addEventListener( 'mousemove', onDocumentMouseMove, false );
     }
         
     function createTextCanvas(text, color, font, size) {
@@ -73,13 +107,14 @@
           
     function gridInit(depth,width,height){
         
+        var grid = new THREE.Object3D();
         var planeXY = new THREE.GridHelper( height, 20, 0x000000, 0x000000 ),
             planeYZ = new THREE.GridHelper( depth, 20, 0x000000, 0x000000 ),
             planeXZ = new THREE.GridHelper( width, 20, 0x000000, 0x000000 );
         
-        pcPlot.add(planeXY);
-        pcPlot.add(planeYZ);
-        pcPlot.add(planeXZ); 
+        grid.add(planeXY);
+        grid.add(planeYZ);
+        grid.add(planeXZ); 
         
         planeXY.position.y = -height;
         planeYZ.position.z = -depth;
@@ -88,108 +123,133 @@
         planeXZ.rotation.z = Math.PI/2;
         
         var labelXZ = createText2D("PC1");
-        pcPlot.add(labelXZ);
+        grid.add(labelXZ);
 			     labelXZ.position.x = width*1.1;
 			     labelXZ.position.y = -height;
         
         var labelXY = createText2D("PC2");
-        pcPlot.add(labelXY);
+        grid.add(labelXY);
 			     labelXY.position.x = width*1.1;
 			     labelXY.position.z = -depth;
         
         var labelYZ = createText2D("PC3");
-        pcPlot.add(labelYZ);
+        grid.add(labelYZ);
 			     labelYZ.position.x = -width*1.1;
 			     labelYZ.position.z = depth;
+        
+        pcPlot.add(grid);
     }
-      
+  
+    function hexToRgb(hex) { //TODO rewrite with vector output
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+        
     function dotsInit(){
-        geometry = new THREE.Geometry();
-        //sprite = new THREE.TextureLoader().load( "textures/sprites/disc.png" );
-        for ( i = 0; i < 10000; i ++ ) {
-         var vertex = new THREE.Vector3();
-         vertex.x = 2000 * Math.random() - 1000;
-         vertex.y = 2000 * Math.random() - 1000;
-         vertex.z = 2000 * Math.random() - 1000;
-         geometry.vertices.push( vertex );
+        var data = d3.csv("defaultData1.csv", function (d){
+        
+        var dots = new THREE.Object3D();
+        var unfiltered = [];
+        d.forEach(function (d,i) {
+                unfiltered[i] = {
+                    x: +d.x,
+                    y: +d.y,
+                    z: +d.z,
+                    group: d.group
+                };
+            })
+
+        var xmax = Math.abs(d3.max(unfiltered, function (d) {return d.x;}))*1.1,
+            xmin = Math.abs(d3.min(unfiltered, function (d) {return d.x;}))*0.9,
+            ymax = Math.abs(d3.max(unfiltered, function (d) {return d.y;}))*1.1,
+            ymin = Math.abs(d3.min(unfiltered, function (d) {return d.y;}))*0.9,
+            zmax = Math.abs(d3.max(unfiltered, function (d) {return d.z;}))*1.1,
+            zmin = Math.abs(d3.min(unfiltered, function (d) {return d.z;}))*0.9;
+
+        var color = d3.scale.ordinal()
+    .range(["#fb8072", "#80b1d3", "#b3de69", "#ffffb3", "#bebada", "#fdb462", "#f781bf", "#8dd3c7", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#fbb4ae", "#b3cde3", "#ffed6f", "#decbe4", "#fed9a6"]);
+
+        var xScale = d3.scale.linear()
+                      .domain([xmin,xmax])
+                      .range([-100,100]);
+        var yScale = d3.scale.linear()
+                      .domain([ymin,ymax])
+                      .range([-100,100]);                  
+        var zScale = d3.scale.linear()
+                      .domain([zmin,zmax])
+                      .range([-100,100]);
+
+        var pointCount = unfiltered.length;
+        var geometry = new THREE.Geometry();
+        var sprite = new THREE.TextureLoader().load( "pics/circle.png" );
+        for ( i = 0; i < pointCount; i ++ ) {
+            var vertex = new THREE.Vector3();
+            vertex.x = xScale(unfiltered[i].x);
+            vertex.y = yScale(unfiltered[i].y);
+            vertex.z = zScale(unfiltered[i].z);
+            geometry.vertices.push( vertex );
+            realcolor = color(unfiltered[i].group);
+            geometry.colors.push(new THREE.Color().setRGB( hexToRgb(realcolor).r / 255, hexToRgb(realcolor).g / 255, hexToRgb(realcolor).b / 255 ));    
         }
-        var material = new THREE.PointsMaterial({size: 35, sizeAttenuation: false} );
-        material.color.setHSL( 1.0, 0.3, 0.7 );
+        var material = new THREE.PointsMaterial({size: 10, sizeAttenuation: false,map: sprite, alphaTest: 0.5, transparent: true,vertexColors:true} );
         var particles = new THREE.Points( geometry, material );
-        pcPlot.add( particles );
+        dots.add( particles );
+        pcPlot.add(dots);
+        })
     }
     
+    function onDocumentMouseMove( event ) {
+
+				event.preventDefault();
+
+				mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+				mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+			}
+    
     function render() {
+        
         requestAnimationFrame( render );
         
         controls.update();
         
         renderer.render( scene, camera );
+        
+        //pcPlot.rotation.y += 0.005;
+        
+        raycaster.setFromCamera( mouse, camera );
+
+				var intersects = raycaster.intersectObjects( boxes.children );
+
+				if ( intersects.length > 0 ) {
+
+					if ( INTERSECTED != intersects[ 0 ].object ) {
+
+						if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+
+						INTERSECTED = intersects[ 0 ].object;
+						INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+						INTERSECTED.material.emissive.setHex( 0xff0000 );
+
+					}
+
+				} else {
+
+					if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+
+					INTERSECTED = null;
+
+				}
     }
+        
     init();
-    render();
     gridInit(depth,width,height);
-    //dotsInit();  
-    
-    var unfiltered = [];
-    d.forEach(function (d,i) {
-            unfiltered[i] = {
-                x: +d.x,
-                y: +d.y,
-                z: +d.z
-            };
-        })
-
-    var xExent = d3.extent(unfiltered, function (d) {return d.x; }),
-        yExent = d3.extent(unfiltered, function (d) {return d.y; }),
-        zExent = d3.extent(unfiltered, function (d) {return d.z; });
-
-    var vpts = {
-        xMax: xExent[1],
-        xCen: (xExent[1] + xExent[0]) / 2,
-        xMin: xExent[0],
-        yMax: yExent[1],
-        yCen: (yExent[1] + yExent[0]) / 2,
-        yMin: yExent[0],
-        zMax: zExent[1],
-        zCen: (zExent[1] + zExent[0]) / 2,
-        zMin: zExent[0]
-    }
-
-    var colour = d3.scale.category20c();
-
-    var xScale = d3.scale.linear()
-                  .domain(xExent)
-                  .range([-100,100]);
-    var yScale = d3.scale.linear()
-                  .domain(yExent)
-                  .range([-100,100]);                  
-    var zScale = d3.scale.linear()
-                  .domain(zExent)
-                  .range([-100,100]);
-    
-    var pointCount = unfiltered.length;
-    
-    
-    var geometry = new THREE.Geometry();
-        //sprite = new THREE.TextureLoader().load( "textures/sprites/disc.png" );
-        for ( i = 0; i < pointCount; i ++ ) {
-         var vertex = new THREE.Vector3();
-         vertex.x = xScale(unfiltered[i].x);
-         vertex.y = yScale(unfiltered[i].y);
-         vertex.z = zScale(unfiltered[i].z);
-         geometry.vertices.push( vertex );
-        }
-        var material = new THREE.PointsMaterial({size: 5, sizeAttenuation: false} );
-        material.color.setHSL( 1.0, 0.3, 0.7 );
-        var particles = new THREE.Points( geometry, material );
-        pcPlot.add( particles );
-    
-    
-    })  
-    
-
-    
+    dotsInit(); 
+    render(); 
       
 		</script>
 	</body>
