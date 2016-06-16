@@ -1,11 +1,23 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 //Libs
-
+var d3 = require('d3');
 
 //Modules
 var pcPlot = require('./js/pcPlot.js');
+
+function deletedots(){
+    pcPlot.deletedots();
+}
+
+function adddots(){
+    pcPlot.adddots();
+}
+
+d3.select('#deleteButton').on('click', deletedots);
+d3.select('#addButton').on('click', adddots);
+
 pcPlot.init();
-},{"./js/pcPlot.js":2}],2:[function(require,module,exports){
+},{"./js/pcPlot.js":2,"d3":3}],2:[function(require,module,exports){
 var d3 = require('d3');
 var THREE = require ('three');
 var OrbitControls = require('three-orbit-controls')(THREE);
@@ -32,8 +44,6 @@ this.pcPlotwrapped = obj;
 };
 
 function sceneInit(){
-    
-    console.log(OrbitControls);
 
     scene = new THREE.Scene();
 
@@ -297,7 +307,18 @@ pcPlot.init = function(){
     render();
 };
 
-pcPlot.init();
+pcPlot.deletedots = function(){
+    alert("remove");
+    pcObj.remove(dots);
+    dots = null;
+    render();
+};
+
+pcPlot.adddots = function(){
+    alert("add");
+    dotsInit();
+    render();
+};
 
 if (typeof define === "function" && define.amd) {
     define(pcPlot);

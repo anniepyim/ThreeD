@@ -287,7 +287,18 @@ pcPlot.init = function(){
     render();
 };
 
-pcPlot.init();
+pcPlot.deletedots = function(){
+    alert("remove");
+    pcObj.remove(dots);
+    dots = null;
+    render();
+};
+
+pcPlot.adddots = function(){
+    alert("add");
+    dotsInit();
+    render();
+};
 
 if (typeof define === "function" && define.amd) {
     define(pcPlot);
