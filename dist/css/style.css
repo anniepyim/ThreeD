@@ -1,10 +1,17 @@
-body { margin: 0}
-canvas { width: 960; height: 500}
+body { margin: 0;}
+#pcplotcanvas {          
+
+    text-align: center;
+}
+
+canvas { 
+    display:inline;
+}
 div.tooltip {   
       position: absolute;           
       text-align: left;           
       width: 250px;               
-      height: 55px;                 
+      height: 30px;                 
       padding: 6px;             
       font: 12px sans-serif;        
       background: lightsteelblue;   

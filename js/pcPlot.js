@@ -11,9 +11,11 @@ var div = d3.select("#pcplotcanvas").append("div")
 var scene, camera, renderer, controls, pcObj, boxes, dots, raycaster;
 var mouse = new THREE.Vector2(), INTERSECTED,
     pageEvent = new THREE.Vector2();
-var depth = 100,
-    width = 100,
-    height = 100;
+var canvasWidth= 600,
+    canvasHeight = 600;
+var gridDepth = 100,
+    gridWidth = 100,
+    gridHeight = 100;
 var rotate = true, mouseflag = 0;
 var container = document.getElementById( 'pcplotcanvas' );
 
@@ -34,12 +36,12 @@ function sceneInit(){
     var alight = new THREE.AmbientLight( 0xffffff, 0.5 );
     scene.add( alight );
 
-    camera = new THREE.PerspectiveCamera( 75, 600/600, 0.1, 1000 );
+    camera = new THREE.PerspectiveCamera( 75, canvasWidth/canvasHeight, 0.1, 1000 );
     camera.position.z = 300;
-    controls = new OrbitControls( camera );
+    
 
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize( 600, 600 );
+    renderer.setSize( canvasWidth, canvasWidth );
     renderer.setClearColor( 0xf0f0f0 );
 
     raycaster = new THREE.Raycaster();
@@ -51,8 +53,15 @@ function sceneInit(){
 
     container.appendChild( renderer.domElement );
     container.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    container.addEventListener( 'click', onDocumentMouseClick);
     container.addEventListener("mousedown", function(){mouseflag = 0;}, false);
-    container.addEventListener("mouseup", function(){if(mouseflag === 0) rotate=!rotate;},false);}
+    container.addEventListener("mouseup", function(){if(mouseflag === 0) rotate=!rotate;},false);
+    
+    controls = new OrbitControls( camera,renderer.domElement );
+
+}
+
+    
 
 function createTextCanvas(text, color, font, size) {
     size = size || 16;
@@ -86,37 +95,37 @@ function createText2D(text, color, font, size, segW, segH) {
     return mesh;
 }
 
-function gridInit(depth,width,height){
+function gridInit(gridDepth,gridWidth,gridHeight){
 
     var grid = new THREE.Object3D();
-    var planeXY = new THREE.GridHelper( height, 20, 0x000000, 0x000000 ),
-        planeYZ = new THREE.GridHelper( depth, 20, 0x000000, 0x000000 ),
-        planeXZ = new THREE.GridHelper( width, 20, 0x000000, 0x000000 );
+    var planeXY = new THREE.GridHelper( gridHeight, 20, 0x000000, 0x000000 ),
+        planeYZ = new THREE.GridHelper( gridDepth, 20, 0x000000, 0x000000 ),
+        planeXZ = new THREE.GridHelper( gridWidth, 20, 0x000000, 0x000000 );
 
     grid.add(planeXY);
     grid.add(planeYZ);
     grid.add(planeXZ); 
 
-    planeXY.position.y = -height;
-    planeYZ.position.z = -depth;
+    planeXY.position.y = -gridHeight;
+    planeYZ.position.z = -gridDepth;
     planeYZ.rotation.x = Math.PI/2;
-    planeXZ.position.x = -width;
+    planeXZ.position.x = -gridWidth;
     planeXZ.rotation.z = Math.PI/2;
 
     var labelXZ = createText2D("PC1");
     grid.add(labelXZ);
-       labelXZ.position.x = width*1.1;
-       labelXZ.position.y = -height;
+       labelXZ.position.x = gridWidth*1.1;
+       labelXZ.position.y = -gridHeight;
 
     var labelXY = createText2D("PC2");
     grid.add(labelXY);
-       labelXY.position.x = width*1.1;
-       labelXY.position.z = -depth;
+       labelXY.position.x = gridWidth*1.1;
+       labelXY.position.z = -gridDepth;
 
     var labelYZ = createText2D("PC3");
     grid.add(labelYZ);
-       labelYZ.position.x = -width*1.1;
-       labelYZ.position.z = depth;
+       labelYZ.position.x = -gridWidth*1.1;
+       labelYZ.position.z = gridDepth;
 
     pcObj.add(grid);
 }
@@ -223,13 +232,29 @@ function onDocumentMouseMove( event ) {
 
     event.preventDefault();
 
-    mouse.x = ( event.clientX / 600 ) * 2 - 1;
-    mouse.y = - ( event.clientY / 600 ) * 2 + 1;
+    mouse.x = ( ( event.clientX - renderer.domElement.offsetLeft ) / renderer.domElement.width ) * 2 - 1;
+    mouse.y = - ( ( event.clientY - renderer.domElement.offsetTop ) / renderer.domElement.height ) * 2 + 1;
 
     pageEvent.x = event.clientX;
     pageEvent.y = event.clientY;
 
     mouseflag = 1;
+
+  }
+
+function onDocumentMouseClick( event ) {
+
+    event.preventDefault();
+
+    mouse.x = ( ( event.clientX - renderer.domElement.offsetLeft ) / renderer.domElement.width ) * 2 - 1;
+    mouse.y = - ( ( event.clientY - renderer.domElement.offsetTop ) / renderer.domElement.height ) * 2 + 1;
+
+    raycaster.setFromCamera( mouse, camera );
+
+    var intersects = raycaster.intersectObjects( dots.children ); 
+    INTERSECTED = intersects[ 0 ].object;
+    alert(INTERSECTED.sampleID);
+      
 
   }
 
@@ -241,7 +266,7 @@ function render() {
 
     renderer.render( scene, camera );
 
-    if (rotate) pcObj.rotation.y += 0.002;
+    //if (rotate) pcObj.rotation.y += 0.002;
 
     raycaster.setFromCamera( mouse, camera );
 
@@ -280,7 +305,7 @@ function render() {
 
 pcPlot.init = function(){
     sceneInit();
-    gridInit(depth,width,height);
+    gridInit(gridDepth,gridWidth,gridHeight);
     dotsInit();
     //boxInit();
     //pcObj.add(new THREE.Mesh(new THREE.BoxBufferGeometry(100,100,100),new THREE.MeshNormalMaterial()))
